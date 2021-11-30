@@ -1,0 +1,165 @@
+---
+title: "Stats Homework 1"
+output: pdf_document
+---
+Scenario: As a researcher you are interested in understanding how two methods of inspecting code work. One method uses a checklist, and the other is a method called perspective-based reading (PBR). We have provide simulated data for an experiment comparing these inspections methods (Note: Be sure to download a local copy of the dataset before proceeding).
+
+```{r}
+require(ggplot2)
+install.packages("reshape2")
+install.packages('nortest')
+```
+
+# Getting help
+To get help in R about a function, for example `boxplot`, type `?boxplot` in the command line.
+
+# Loading the data
+For this part, load the inspection data ("inspection.csv") file located in the assignment folder with this file. 
+
+```{r}
+# code goes here
+my_dataset <- read.csv("C:\\Users\\delyar\\Desktop\\CS 567\\Stats HW 1\\inspection.csv")
+my_dataset
+getOption("repos")
+rmarkdown::render("Delyar-Homework1.Rmd", "pdf_document")
+```
+
+# Plotting
+You would like to know the descriptive statistics of the two inspection methods. Compare the samples via their mean, median, and box-plot distributions.
+
+```{r}
+# code goes here
+mean(my_dataset$pbr)
+mean(my_dataset$checklist)
+
+median(my_dataset$pbr)
+median(my_dataset$checklist)
+
+boxplot(my_dataset)
+```
+
+# Normality
+You want to see if your data is normally distributed. Hint: You can use Shapiro-Wilk or Anderson-Darling. Justify which is more appropriate.
+```{r}
+#Shapiro: The Prob < W value listed in the output is the p-value. If the chosen alpha level is 0.05 and the p-value is less than 0.05, then the null hypothesis that the data are normally distributed is rejected. If the p-value is greater than 0.05, then the null hypothesis is not rejected.
+shapiro.test(my_dataset$pbr)
+shapiro.test(my_dataset$checklist)
+# here we have p values of 0.63 and 0.18 respectively for pbr and checklist. both of them are bigger than 0.05 so both are normally distributed.
+#if you have smaller sample size, Shapiro test is more preferred. 
+
+library(nortest)
+ad.test(my_dataset$pbr)
+ad.test(my_dataset$checklist)
+
+#also for the ad test we can see that the p values are 0.47 and 0.24 that are bigger than 0.05 so we cannot reject the null hypothesis that the distributions are normal.
+```
+
+# Bootstrapping
+You would like to do "bootstrap" your data to make sure that data parameters are robust. Bootstrapping is a statistical method for estimating the sampling distribution by sampling with replacement from the original sample. Note: You will need to do this to expand your "term project data" to include enough data for analysis.
+
+Bootstrap the data. Then compare and contrast the original dataset with the bootstrap (use descriptive statistics as before).
+
+```{r}
+# Step 1: Randomly resample data points for each treatment 20000 times  (hint: you can use sample or replicate)
+
+ExpandedPBR <- sample(my_dataset$pbr, 20000, replace = TRUE , prob = NULL)
+ExpandedChecklist <- sample(my_dataset$checklist, 20000, replace = TRUE , prob = NULL)
+
+# Step 2: Draw the histogram to compare the orignal with the bootstrap data for each treatment separately (hint: use `hist`)
+
+hist(my_dataset$pbr)
+hist(ExpandedPBR)
+
+hist(my_dataset$checklist)
+hist(ExpandedChecklist)
+
+# Step 3: Check the normality of the bootstrapped data.
+
+# from the visual method of the histograms we can tell that they are not sample but we can use AD test as well
+
+ad.test(ExpandedPBR)
+ad.test(ExpandedChecklist)
+
+#from the AD test we have p-value < 2.2e-16 --> the null hypothesis that the data are normally distributed is rejected
+
+# Step 4: Compare the descriptive statistics of original with the bootstrapped data.
+
+mean(my_dataset$pbr)
+mean(my_dataset$checklist)
+mean(ExpandedPBR)
+mean(ExpandedChecklist)
+
+median(my_dataset$pbr)
+median(my_dataset$checklist)
+median(ExpandedPBR)
+median(ExpandedChecklist)
+
+boxplot(my_dataset$pbr, my_dataset$checklist, ExpandedPBR, ExpandedChecklist)
+```
+
+In the rest of the HW, we will use the original dataset.
+
+#dataFormatting
+To run statistics you need your data needs to be `reshaped' to look like this:
+"","treatment","time"
+"1","pbr",20
+.....
+"2","checklist",19
+```{r}
+#code goes here (hint: use melt or reshape)
+library("reshape2")
+#one way:
+melted <- melt(my_dataset)
+#another way (I prefer this cause it has names for the variables and the values)
+Compare <- data.frame(treatment=rep(c("pbr", "checklist"), each=30), time=c(my_dataset$pbr, my_dataset$checklist))
+Compare
+```
+
+# T-tests
+Now you would like to statistically compare the mean time used for two inspection methods. Test and report for significance at 0.05.
+
+a) Perform a two-tailed t-test (assume the variances are equal).
+
+```{r}
+# code goes here
+t.test(Compare$time ~ Compare$treatment, alternative = "two.sided", var.equal = FALSE)
+
+#if the variances are equal we can also have it like this:
+t.test(my_dataset$pbr ,my_dataset$checklist, alternative = "two.sided", var.equal=TRUE)
+#we have p-value = 0.08656 --> higher than 0.05 --> not statistically significant
+```
+
+b) Perform a one-tailed t-test (assume PBR takes less time than checklist, variances are equal) and check if results are statistically significant.
+
+```{r}
+# code goes here
+t.test(Compare$time ~ Compare$treatment, alternative = "less", var.equal = TRUE)
+#p-value = 0.9567 --> higher than 0.05 --> not statistically significant
+```
+
+c)  Assume that in the study sub'jects were paired together by experience level and comparisons are done within pairs, and use a paired (two-tailed) t-test to check if the results are statistically significant.
+
+```{r}
+# code goes here
+
+t.test(Compare$time ~ Compare$treatment, alternative = "two.sided", paired=TRUE, var.equal=TRUE)
+
+```
+
+d) Re-do parts a,b,c using non-parametric tests instead (Wilcoxon tests, also known as Mann-Whitney) and compare the p-values to what you originally obtained.
+
+```{r}
+# code goes here for all 3 cases
+wilcox.test(Compare$time ~ Compare$treatment, mu=0, alt="two.sided", conf.int=T, conf.level=0.95, paired = F, exact=F, correct=T)
+wilcox.test(Compare$time ~ Compare$treatment, mu=0, alt="less", conf.int=T, conf.level=0.95, paired = F, exact=F, correct=T)
+wilcox.test(Compare$time ~ Compare$treatment, mu=0, alt="two.sided", conf.int=T, conf.level=0.95, paired = T, exact=F, correct=T)
+
+#another way:
+wilcox.test(Compare$time ~ Compare$treatment, alternative = "two.sided", var.equal=TRUE, var.equal=TRUE, exact = FALSE)
+wilcox.test(Compare$time ~ Compare$treatment, alternative="less", var.equal=TRUE, exact = FALSE)
+wilcox.test(Compare$time ~ Compare$treatment, alternative = "two.sided", paired=TRUE, exact = FALSE, var.equal=TRUE)
+
+#only for part c the p-value is less than 0.05 -->If a p-value reported from a t test is less than 0.05, then that result is said to be statistically significant.
+```
+
+```

@@ -1,0 +1,184 @@
+---
+title: "Stats Homework 2"
+output: pdf_document
+---
+
+# ANOVA
+
+As an SE researcher you are evaluating different programming languages. For the next set of questions input the R code and interpret your findings.
+
+a) The results of your first study compares Java, Python, and Ruby code based on the size of the programs in source (i.e. non-blank, non-commented) lines of code. Perform an ANOVA to determine whether there is an effect on size due to programming language. Use `lang-size.csv`. 
+
+```{r}
+# code goes here.
+lang_size <- read.csv("C:\\Users\\delyar\\Desktop\\CS 567\\Stats HW 2\\lang-size.csv")
+lang_size
+anova_results <- aov(lang_size$sloc ~ lang_size$lang)
+summary(anova_results)
+
+TukeyHSD(anova_results)
+# in the results we see that the degree of freedom of the numerator is 2 and the degree of freedom of denominator is 87.
+# the result of the test is 62.6
+```
+Report:
+Here we are having one independent variable which is the language and sloc which is the dependent variable.
+our Independent variable is categorical. Sloc is quantitative dependent variable.
+The independent variable has three levels.
+The *null hypothesis* (H~0~) of ANOVA is that there is no difference among group means. The *alternative hypothesis* (H~a~) is that at least one group differs from the overall mean of the dependent variable.
+The p-value is <2e-16.
+
+1. The degrees of freedom (under column labelled `Df`) for the variable `lang_size$lang`. This is calculated as *(# of groups) - 1*, so in this case, there were 3 langs and the value is `3-1 = 2`.
+2. The degrees of freedom for the residuals. This is calculated as *(# of total observations) - (# of groups)*. In this case, there were 90 observations and 3 groups, so this value is `90-3 = 87`.
+3. The sum of squares (under column labelled `Sum Sq`) for the variable `lang_size$lang`. The sum of squares helps express the total variation that can be attributed to various factors; i.e. *sum of squares = treatment sum of squares (SST) + sum of squares of the residual error (SSE)*. In this case, the value is 276056.
+4. The sum of squares of the residual. This value is 191836.
+5. The mean square (under column labelled `Mean Sq`) for the variable `lang_size$lang`. This is calculated as *(sum of squares of treatment) / (Df of treatment)*, and allows you to determine whether there is a significant difference due to the treatment. The larger the ratio is, the more the treatments affect the outcome. In this case, it is calculated as `276056/2 = 138028`.
+6. The mean square of the residuals. This is calculated as *(sum of squares of residuals) / (Df of residuals)*. In this case, it is calculated as `191836/87 = 2205`.
+7. The overall F-statistic of the ANOVA model (under column labelled `F value`). This is calculated as *(mean square of treatment) / (mean square of residuals)*. In this case, it is calculated as `138028/2205 = 62.6`.
+8. The p-value (under column labelled `Pr(>F)`) associated with the F-statistic with numerator `df = 2` and denominator `df = 87`. In this case, the p-value is <2e-16 , which is 2 X 10 ^ -16 and well below either a `p<0.05`, `p<0.01`, or even `p<0.001` threshold for significance. The `***` stars beside this value also indicate where this fits on a significance range from 0 to 1.
+
+Interpreting the results for our specific test, we see that the p-value in our ANOVA table is less than `p<0.05` and we therefore find sufficient evidence to **reject the null hypothesis** that all group means are equal. This means that we have sufficient evidence to say that the mean code size is not equal between the 3 programming languages.
+
+## Post-hoc ANOVA
+If the p-value in the ANOVA output is less than 0.05, we reject the null hypothesis. This tells us that the mean value between each group is not equal. However, it doesn't tell us *which* groups differ from each other. In order to find this out, we must perform a post-hoc test. We can use the Tukey HSD 
+
+
+Here is how to interpret the Tukey results:
+
+1. The adjusted p-value for the mean difference between group Java and Python is 0.0000000.
+2. The adjusted p-value for the mean difference between group Java and Ruby is 0.0010476.
+3. And so on for all combinations of pairs in the set.
+
+
+The adjusted p-values that are less than 0.05. Therefore, we can conclude that there is a significant difference in mean.
+
+
+
+
+
+
+
+
+b) In a subsequent study you measured the programming time (in hours) required to solve a program in Java, Python, and Ruby. This was a within subject study design: each participant solved the problem three times, and all participants solved the problem in the same order (Java, then Python, then Ruby). Perform an ANOVA to determine whether there is an effect due to programming language. Use `lang-time.csv`.
+
+
+## Two-way ANOVA 
+A two-way ANOVA (also called *multiple-factor ANOVA*) is used to determine whether or not there is a statistically significant difference between the means of three or more independent groups that have been split on two variables.
+
+```{r}
+# code goes here
+lang_time <- read.csv("C:\\Users\\delyar\\Desktop\\CS 567\\Stats HW 2\\lang-time.csv")
+lang_time
+
+aov <- aov(lang_time$times ~ lang_time$lang + lang_time$participant)
+summary(aov)
+TukeyHSD(aov)
+```
+Report:
+Because this is a two-way ANOVA, the ANOVA table provides results broken out by group (i.e. the independent variables). In this case, we can see that only the `lang_time$lang` factor has a statistically significant effect on the mean number of times. This result leads us to believe that changing the lang will impact significantly the mean time; and that changing `participant` would not have such an effect.
+
+
+c) Your realized you should have counterbalanced, so you replicated the study from (b) which uses a crossover design to control for ordering. Each participant solved the problem in all three languages, but in each participant solved them in a different order. Perform an ANOVA to determine whether there is an effect due to programming language. Use `lang-time-crossover.csv`. 
+
+```{r}
+# code goes here
+cross <- read.csv("C:\\Users\\delyar\\Desktop\\CS 567\\Stats HW 2\\lang-time-crossover.csv")
+cross
+
+aov <- aov(cross$times ~ cross$lang + cross$participant + cross$treatment)
+summary(aov)
+```
+Report:
+
+All of the p-values are bigger than 0.05 so it means that the mean differences are not statistically significant.
+
+
+
+
+
+d) You have some simulated results from an experiment that compared development time for Java, Python and Ruby, for subjects with low experience and high experience. Perform an ANOVA and identify which factors (language, experience) had a statistically significant effect. Also specify whether the interaction between programming language and experience was statistically significant or not. Use `lang-time-exp.csv`. 
+
+```{r}
+# code goes here
+
+data <- read.csv("C:\\Users\\delyar\\Desktop\\CS 567\\Stats HW 2\\lang-time-exp.csv")
+data
+model <- aov(data$times ~ data$lang + data$exp)
+summary(model)
+
+print("--------------------")
+
+summary(aov(data$times ~ data$lang + data$exp + data$lang:data$exp))
+```
+Report:
+
+A p-value less than 0.05 (typically <= 0.05) is statistically significant.
+The p-value for data$lang is 0.184 so it is bigger than 0.05 and it is not statistially significant.
+The p-value for data$exp  is <2e-16 so it is less than 0.05 and it is statistially significant.
+If we think that these two variables might interact to create a synergistic effect, we can switch to using a model that includes the possibility of this interaction effect as seen in top code.
+Although, as we can see in our ANOVA output table, the p-value for this interaction is not significant with a p-value of `0.227`. Therefore, it is unlikely that there is an interaction effect between these factors.
+
+# Part 3: Data analysis of an experiment
+
+In this question, you'll analyze the raw data from an experiment and write up the results (similar to a publication).
+
+The data is from a experiment to test whether statically typed languages (e.g. Java) or dynamically typed languages (e.g. Python) require more programming effort. The study evaluates the languages on two problems, a "small" problem and a "large" problem, to see if the results change based on the size of the problem. The study is a factorial design. The raw data from the experiment is available in this file: `lang-time-size.csv`.
+
+Analyze the data and write up a short "results" section (as if it were a part of a paper) with your analysis of the data. This section should contain:
+
+* Analysis of variance tables to determine if there are any interactions
+* Interaction plot between the 2 factors
+* Effect sizes for programming language for the "small" problem and for the "large" problem.
+* I am not looking for a specific format, use your judgement about the best way to present this data to convey the results to a reader.
+
+
+Results:
+In this study, we analyzed the effect of our two independent variables that are programming language and the problem size on the dependent variable which is the time of the program.In order to begin our analysis of the data, first we checked whether the times data is normal or not with the Shapiro test. From the output, the $p<0.05$ result shows that we reject the null hypothesis, which means that the distribution of our data is significantly different from the normal distribution. This means that we are able to perform non-parametric tests on our data. In our analysis we have two variables that affect the times variable. Programming language and the problem size are both categorical variables. So we performed a Chi-Squared test method for determining if these two categorical variables have significant correlation between them. The result showed that p-value is 1, which indicates no strong correlation between the problem size and programming language factors. This makes sense because the two variables are independent from each other. Then we decided to draw the interaction plot between the two independent variables to see their interaction with each other and the dependent variable. By looking at the interaction plot, we figured out that for program sizes that are small, the program time in python language is much lower than Java language. However, for program sizes that are large, it is evident that the program time is smaller using Java as the programming language rather than Python. We also ran the Fisher's test and made sure that our two categorical variables are independent from each other. The odds ratio from Fisher's test is 1 so our null hypothesis cannot be rejected. This means that the effect sizes of the two factors are equal to each other. Then we ran the Anova test to find out whether the differences between groups of data are statistically significant. It works by analyzing the levels of variance within the groups through samples taken from each of them. According to the results of the Anova test, we can see that the programming language does not have statistically significant effect on times because its p-value is greater than 0.05. However we can see that the p-value of the problem size is less than 0.05 so it has a statistically significant relation with the times variable.From the Anova test results we also can see that the p-value for the interaction between our two independent variables (lang and size) is less than 0.05 meaning that there is an interaction effect between these factors.It is also notable that when we have more than two groups per variable it is better to use anova, if not, it is better using a t-test.
+
+
+```{r}
+
+# Code for analysis goes here.
+my_data <- read.csv("C:\\Users\\delyar\\Desktop\\CS 567\\Stats HW 2\\lang-time-size.csv")
+my_data
+
+#Analyzing variance
+anova_model <- aov(my_data$times ~ my_data$lang + my_data$size + my_data$lang:my_data$size)
+summary(anova_model)
+TukeyHSD(anova_model)
+print("---------------------------------------")
+
+#checking to see if data is normal
+shapiro.test(my_data$times)
+print("---------------------------------------")
+
+# Create a data frame from the main data set.
+analysis.data <- data.frame(my_data$lang, my_data$size)
+
+# Create a table with the needed variables.
+analysis.data = table(my_data$lang, my_data$size) 
+print(analysis.data)
+
+# Perform the Chi-Square test.
+print(chisq.test(analysis.data))
+print("---------------------------------------")
+
+#Fisher's test
+# create a dataframe
+df <- data.frame("python" = c(30, 30), "java" = c(30, 30), row.names = c("small", "large"))
+df
+
+# run the test
+fisher.test(df)
+print("---------------------------------------")
+
+interaction.plot(my_data$lang,
+                 my_data$size,
+                 my_data$times,
+                 fun = mean,
+                 ylab = "Program Times",
+                 xlab = "Programming Language",
+                 col = c("red", "blue"),
+                 lty = 1, 
+                 lwd = 4, #line width
+                 trace.label = "Program Size")
+```
